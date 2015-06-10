@@ -1,0 +1,15 @@
+---
+- name: Install platanus sphinx stack
+  hosts: tag_provision_platanus_negroku:&~tag_stack_.*sphinx.*
+  remote_user: ubuntu
+  sudo: true
+
+  tasks:
+    - name: Adds sphinx repository
+      apt_repository: repo='ppa:builds/sphinxsearch-rel22'
+
+    - name: Install sphinx
+      apt: name=sphinxsearch state=present update_cache=yes
+
+    - name: Disable sphinx on boot
+      service: name=sphinxsearch enabled=no state=stopped

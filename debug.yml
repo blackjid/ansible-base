@@ -1,0 +1,9 @@
+---
+- name: Get the facts
+  hosts: tag_provision_platanus_negroku
+  remote_user: ubuntu
+  sudo: true
+
+  tasks:
+    - name: Display all variables/facts known for a host
+      debug: var=hostvars[inventory_hostname]

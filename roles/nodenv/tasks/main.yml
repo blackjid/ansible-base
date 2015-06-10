@@ -1,0 +1,81 @@
+---
+- name: include env vars
+  include_vars: "main.yml"
+
+- name: update nodenv repo
+  sudo: true
+  git: >
+    repo=git://github.com/OiNutter/nodenv.git
+    dest={{ nodenv_root }}
+    version=v0.2.0
+    accept_hostkey=yes
+    force=yes
+
+- name: create plugins directory
+  file: state=directory path={{ nodenv_root }}/plugins
+  sudo: true
+
+- name: add nodenv initialization to root
+  template: src=nodenv.sh.j2 dest=/root/nodenv.sh mode=0755
+  sudo: true
+  tags:
+    - test
+
+- name: add nodenv initialization to deploy
+  template: src=nodenv.sh.j2 dest=/home/{{ node_extra_user }}/nodenv.sh mode=0755
+  sudo: true
+  sudo_user: "{{ node_extra_user }}"
+
+- name: ensure initialization is loaded on login
+  lineinfile: "dest=/home/{{ nodenv_user }}/.bashrc
+               state=present
+               regexp='/home/{{ nodenv_user }}/nodenv.sh'
+               line='. /home/{{ nodenv_user }}/nodenv.sh'"
+  sudo: true
+  sudo_user: "{{ nodenv_user }}"
+
+- name: install plugins
+  git: >
+    repo={{ item.repo }}
+    dest={{ nodenv_root }}/plugins/{{ item.name }}
+    version={{ item.version }}
+    accept_hostkey=true
+  with_flattened:
+    - nodenv_plugins
+    - nodenv.required_plugins
+  sudo: true
+
+- name: check node {{ item }} installed
+  shell: nodenv versions --bare | grep {{ item }}
+  environment: nodenv_env
+  register: node_installed
+  with_items: node_versions
+  ignore_errors: yes
+  changed_when: false
+  failed_when: not item == node_installed.stdout
+  sudo: true
+
+- name: install node {{ item.item }}
+  shell: nodenv install {{ item.item }}
+  environment: nodenv_env
+  with_items: node_installed.results
+  when: item|failed
+  sudo: true
+
+- name: update node {{ item }} alias
+  file: path={{ nodenv_root }}/versions/{{ item.key }} src={{ nodenv_root }}/versions/{{ item.value }} state=link
+  with_dict: node_aliases
+  sudo: true
+
+- name: get node global
+  shell: cat {{ nodenv_root }}/version
+  changed_when: false
+  ignore_errors: yes
+  register: get_node_global
+  sudo: true
+
+- name: set node global
+  shell: nodenv global {{ node_global }} && nodenv rehash
+  environment: nodenv_env
+  sudo: true
+  changed_when: "'{{ get_node_global.stdout }}' != '{{ node_global }}'"

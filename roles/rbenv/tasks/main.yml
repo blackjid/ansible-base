@@ -1,0 +1,87 @@
+---
+- name: include env vars
+  include_vars: "main.yml"
+
+- name: update rbenv repo
+  sudo: true
+  git: >
+    repo=git://github.com/sstephenson/rbenv.git
+    dest={{ rbenv_root }}
+    version=v0.4.0
+    accept_hostkey=true
+    force=yes
+
+- name: create plugins directory
+  file: state=directory path={{ rbenv_root }}/plugins
+  sudo: true
+
+- name: add rbenv initialization to root
+  template: src=rbenv.sh.j2 dest=/root/rbenv.sh mode=0755
+  sudo: true
+
+- name: add rbenv initialization to deploy
+  template: src=rbenv.sh.j2 dest=/home/{{ ruby_extra_user }}/rbenv.sh mode=0755
+  sudo: true
+  sudo_user: "{{ ruby_extra_user }}"
+
+- name: ensure initialization is loaded on login
+  lineinfile: "dest=/home/{{ ruby_extra_user }}/.bashrc
+               state=present
+               regexp='/home/{{ ruby_extra_user }}/rbenv.sh'
+               line='. /home/{{ ruby_extra_user }}/rbenv.sh'"
+  sudo: true
+  sudo_user: "{{ ruby_extra_user }}"
+
+- name: install plugins
+  git: >
+    repo={{ item.repo }}
+    dest={{ rbenv_root }}/plugins/{{ item.name }}
+    version={{ item.version }}
+    accept_hostkey=true
+  with_flattened:
+    - rbenv_plugins
+    - rbenv.required_plugins
+  sudo: true
+
+- name: check ruby {{ item }} installed
+  shell: rbenv versions --bare | grep {{ item }}
+  environment: rbenv_env
+  register: ruby_installed
+  with_items: ruby_versions
+  ignore_errors: yes
+  changed_when: false
+  failed_when: not item == ruby_installed.stdout
+  sudo: true
+
+- name: install ruby {{ item.item }}
+  shell: rbenv install {{ item.item }}
+  environment: rbenv_env
+  with_items: ruby_installed.results
+  when: item|failed
+  sudo: true
+
+- name: update ruby {{ item }} alias
+  file: path={{ rbenv_root }}/versions/{{ item.key }} src={{ rbenv_root }}/versions/{{ item.value }} state=link
+  with_dict: ruby_aliases
+  sudo: true
+
+- name: set gemrc
+  copy: src=gemrc dest=~/.gemrc
+  sudo: true
+
+- name: set default-gems
+  copy: src=default-gems dest={{ rbenv_root }}/default-gems
+  sudo: true
+
+- name: get ruby global
+  shell: cat {{ rbenv_root }}/version
+  changed_when: false
+  ignore_errors: yes
+  register: get_ruby_global
+  sudo: true
+
+- name: set ruby global
+  shell: rbenv global {{ ruby_global }} && rbenv rehash
+  environment: rbenv_env
+  sudo: true
+  changed_when: "'{{ get_ruby_global.stdout }}' != '{{ ruby_global }}'"

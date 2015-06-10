@@ -1,0 +1,37 @@
+---
+- name: install pip
+  sudo: true
+  apt: name=python-pip state=installed update-cache=yes
+
+- name: install httplib2
+  sudo: true
+  pip: name=httplib2
+
+- name: get user from teams
+  register: github_team_users
+  uri: >
+    url=https://api.github.com/teams/{{ item }}/members
+    user={{ github_token }}
+    password=x-oauth-basic
+    force_basic_auth=yes
+  with_items: teams
+
+- name: remove authorized keys
+  file: path=/home/{{ target_user }}/.ssh/authorized_keys state=absent
+
+- name: get keys from users
+  register: github_team_keys
+  uri: >
+    url=https://api.github.com/users/{{ item.login }}/keys
+    user={{ github_token }}
+    password=x-oauth-basic
+    force_basic_auth=yes
+  with_items: github_team_users.results.0.json
+
+- name: add key to user
+  authorized_key: user="{{ target_user }}"
+                  key="{{ item.1.key }} {{ item.0.item.login}}"
+                  manage_dir=true
+  with_subelements:
+    - github_team_keys.results
+    - json

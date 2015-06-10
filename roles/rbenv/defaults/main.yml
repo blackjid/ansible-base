@@ -1,0 +1,5 @@
+---
+rbenv_root: /usr/local/rbenv
+rbenv_env:
+  RBENV_ROOT: "{{ rbenv_root }}"
+  PATH: "{{ rbenv_root }}/bin:{{ ansible_env.PATH }}"

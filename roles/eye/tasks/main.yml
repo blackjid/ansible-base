@@ -1,0 +1,42 @@
+---
+- name: create eye directory
+  file: state=directory path={{ eye_setting_location }}
+  sudo: true
+  sudo_user: "{{ eye_user }}"
+
+- name: check log file exist
+  stat: path={{ eye_global_log }}
+  register: eye_log_file
+  sudo: true
+  sudo_user: "{{ eye_user }}"
+
+- name: touch log file
+  file: path={{ eye_global_log }} state=touch mode="u=rw,g=rw,o=r" owner="{{ eye_user }}"
+  when: eye_log_file.stat.exists == false
+  sudo: true
+
+- name: add eye settings page
+  template: src={{ item }}.eye.rb.j2 dest={{ eye_setting_location }}/{{ item }}.eye.rb
+  sudo: true
+  sudo_user: "{{ eye_user }}"
+  with_items:
+    - http
+    - logger
+    - notify
+
+- name: start eye
+  shell: rbenv exec eye load {{ eye_setting_location }}/*.eye.rb
+  environment:
+    RBENV_VERSION: "{{ eye_ruby_version }}"
+    RBENV_ROOT: "{{ rbenv_root }}"
+    PATH: "{{ rbenv_root }}/bin:{{ ansible_env.PATH }}"
+  sudo: true
+  sudo_user: "{{ eye_user }}"
+
+- name: start eye on reboot
+  cron: >
+    name="eye on reboot"
+    special_time=reboot
+    job="RBENV_VERSION={{ eye_ruby_version }} {{ rbenv_root }}/shims/eye load {{ eye_setting_location }}/*.eye.rb {{ eye_files }}"
+  sudo: true
+  sudo_user: "{{ eye_user }}"

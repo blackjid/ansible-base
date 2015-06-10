@@ -1,0 +1,21 @@
+require 'eye/notify/hipchat'
+
+Eye.config do
+  mail host: "email-smtp.us-east-1.amazonaws.com",
+       port: 587,
+       domain: "us-east-1.amazonaws.com",
+       auth: :login,
+       starttls: true,
+       user: "{{ eye_mail_user }}",
+       password: "{{ eye_mail_password }}",
+       from_mail: '{{ eye_mail_address }}',
+       from_name: "eye - #{`hostname`.chomp}"
+
+  hipchat token: '{{ eye_hipchat_token }}',
+          api: 'v2',
+          message: '<strong>#full_name#</strong> (#pid#) on #host# #message# at #time#.',
+          notify_all: true
+
+  contact :chat_room, :hipchat, '{{ eye_hipchat_room }}'
+  contact :monitor, :mail, "{{ eye_mail_address }}"
+end

@@ -1,0 +1,15 @@
+- name: platanus.hostname
+  src: https://github.com/platanus/ansible-hostname
+  version: de3371f9f26039af30f45d64524870ed1f412176
+- name: jnv.unattended-upgrades
+  src: https://github.com/jnv/ansible-role-unattended-upgrades
+  version: v1.1.0
+- name: kamaln7.swapfile
+  src: https://github.com/kamaln7/ansible-swapfile
+  version: "0.4"
+- name: nickhammond.logrotate
+  src: https://github.com/nickhammond/ansible-logrotate
+  version: fc3ea4006206b8bc91de0496a43d4c7537e2061a
+- name: franklinkim.nginx
+  src: https://github.com/weareinteractive/ansible-nginx
+  version: 1.2.1

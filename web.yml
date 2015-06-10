@@ -1,0 +1,39 @@
+---
+- name: Install platanus base web environment
+  hosts: tag_provision_platanus_negroku:&~tag_stack_.*web.*
+  remote_user: ubuntu
+  sudo: true
+
+  pre_tasks:
+    - name: Create application storage directory with user permissions
+      file: path=/applications owner={{ deploy_user }} group=root mode=0755 state=directory
+      when: ansible_devices.xvdf is defined
+
+    - name: Link application mount to /home location
+      file: path=/home/{{ deploy_user }}/applications src=/applications owner="{{ deploy_user }}" group=root state=link
+      when: ansible_devices.xvdf is defined
+
+    - name: Prepare filesystem for application
+      filesystem: fstype=ext4 dev=/dev/xvdf
+      when: ansible_devices.xvdf is defined
+
+    - name: Resize the application storage volume
+      command: resize2fs /dev/xvdf
+      register: resize_result
+      changed_when: not resize_result.stderr | search("Nothing to do!")
+      when: ansible_devices.xvdf is defined
+
+    - name: Mount Application storage
+      mount: name=/applications src=/dev/xvdf fstype=ext4 opts=rw,nobootwait state=mounted
+      when: ansible_devices.xvdf is defined
+
+    - name: Give permission to the deploy user
+      file: path=/applications owner={{ deploy_user }} group=root mode=0755
+      when: ansible_devices.xvdf is defined
+
+  roles:
+    - role: franklinkim.nginx
+      vars:
+        - nginx_worker_processes: 4
+        - nginx_remove_default: true
+        - nginx_add_rules: no

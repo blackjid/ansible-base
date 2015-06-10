@@ -1,0 +1,13 @@
+domain: "<domain>"
+deploy_user: deploy
+deploy_user_uid: 1040
+deploy_user_gid: 1040
+
+github_token: <github token>
+github_deployment_team_id: <team id>
+
+eye_mail_address: <mail to alert>
+eye_mail_user: <smpt user>
+eye_mail_password: <smpt pass>
+eye_hipchat_room: devops
+eye_hipchat_token: <hipchat token>

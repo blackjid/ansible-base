@@ -1,0 +1,5 @@
+---
+nodenv_root: /usr/local/nodenv
+nodenv_env:
+  NODENV_ROOT: "{{ nodenv_root }}"
+  PATH: "{{ nodenv_root }}/bin:{{ ansible_env.PATH }}"

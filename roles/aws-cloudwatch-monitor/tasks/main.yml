@@ -1,0 +1,32 @@
+---
+- name: update apt cache
+  apt: update_cache=yes
+  sudo: true
+
+- name: install monitoring script depends
+  apt: pkg={{ item }} state=present install_recommends=no
+  with_items:
+    - libdatetime-perl
+    - libwww-perl
+    - unzip
+  sudo: true
+
+- name: download monitoring script
+  register: download
+  get_url: >
+    url={{ monitor_script_url }}
+    dest=/tmp/CloudWatchMonitoringScripts.zip
+    sha256sum=e31110347aa1727dcfc966f48ab93fecbbd672713e5b18ea22cd1deed62e54b3
+
+- name: unarchive monitoring script
+  unarchive: src=/tmp/CloudWatchMonitoringScripts.zip dest={{ monitor_script_path }} copy=no
+  sudo: true
+  sudo_user: '{{ monitor_script_user }}'
+  when: download.changed == true
+
+- name: adds monitor script to cron
+  cron: >
+    name="aws cloudwatch monitor"
+    minute="*/1"
+    job="~/aws-scripts-mon/mon-put-instance-data.pl --mem-util --mem-used --mem-avail --disk-space-util --disk-path=/ --from-cron"
+    user={{ monitor_script_user }}

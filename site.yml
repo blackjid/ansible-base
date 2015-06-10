@@ -1,0 +1,7 @@
+---
+  - include: common.yml
+  - include: web.yml
+  - include: ruby.yml
+  - include: node.yml
+  - include: consul.yml
+  - include: sphinx.yml

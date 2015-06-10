@@ -1,0 +1,44 @@
+---
+- name: Install platanus base ruby server environment
+  hosts: tag_provision_platanus_negroku:&~tag_stack_.*ruby.*
+  remote_user: ubuntu
+  sudo: true
+
+  vars:
+    ruby_global: "2.1"
+
+  roles:
+    - role: rbenv
+      ruby_versions:
+        - "1.9.3-p551"
+        - "2.2.1"
+        - "2.1.5"
+        - "2.0.0-p643"
+      ruby_aliases:
+        "2.2": "2.2.1"
+        "2.1": "2.1.5"
+        "2.0.0": "2.0.0-p643"
+        "1.9.3": "1.9.3-p551"
+      ruby_global: "{{ ruby_global }}"
+      ruby_extra_user: "{{ deploy_user }}"
+      rbenv_plugins:
+        - name: "rbenv-vars"
+          repo: "git://github.com/sstephenson/rbenv-vars.git"
+          version: "v1.2.0"
+
+    - role: rbenv_gems
+      gems:
+        - name: eye
+          ruby_versions:
+            - "{{ ruby_global }}"
+        - name: eye-http
+          ruby_versions:
+            - "{{ ruby_global }}"
+        - name: eye-hipchat
+          ruby_versions:
+            - "{{ ruby_global }}"
+
+    - role: eye
+      eye_user: '{{ deploy_user }}'
+      eye_files: 'applications/**/shared/config/eye.rb'
+      eye_ruby_version: "{{ ruby_global }}"

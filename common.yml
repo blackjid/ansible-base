@@ -1,0 +1,85 @@
+---
+- name: Install platanus base common server environment
+  hosts: tag_provision_platanus_negroku
+  remote_user: ubuntu
+  sudo: true
+
+  pre_tasks:
+    - name: Add deployment user
+      user: name={{ deploy_user }} shell=/bin/bash uid={{ deploy_user_uid }}
+
+    - name: Disallow root SSH access
+      lineinfile: dest=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
+      notify: Restart ssh
+
+    - name: Disallow password authentication
+      lineinfile: dest=/etc/ssh/sshd_config regexp="^PasswordAuthentication" line="PasswordAuthentication no" state=present
+      notify: Restart ssh
+
+    - name: Install dependencies
+      apt: name={{ item }} state=latest update-cache=yes
+      with_items:
+        - autoconf
+        - build-essential
+        - curl
+        - git-core
+        - imagemagick
+        - libbz2-dev
+        - libcurl4-openssl-dev
+        - libevent-dev
+        - libffi-dev
+        - libglib2.0-dev
+        - libjpeg-dev
+        - libmagickcore-dev
+        - libmagickwand-dev
+        - libmysqlclient-dev
+        - libncurses5-dev
+        - libpq-dev
+        - libreadline-dev
+        - libsqlite3-dev
+        - libssl-dev
+        - libxml2-dev
+        - libxslt1-dev
+        - libyaml-dev
+        - zlib1g-dev
+
+    - name: adds passwordless commands to sudo
+      lineinfile: "dest=/etc/sudoers
+                  state=present
+                  regexp='^deploy'
+                  line='deploy ALL=(ALL) NOPASSWD: /usr/bin/service nginx *, /usr/sbin/nginx_ensite, /usr/sbin/nginx_dissite, /bin/mv /tmp/unicorn.rb *, /bin/mv /tmp/nginx.conf *, /usr/sbin/nginx -t, /bin/ln -nfs *, /bin/mkdir *'
+                  validate='visudo -cf %s'"
+  roles:
+    - role: jnv.unattended-upgrades
+
+    - role: ssh-keys-github
+      teams:
+        - "{{ github_deployment_team_id }}"
+
+    - role: kamaln7.swapfile
+      swapfile_size: 1GB
+      swapfile_swappiness: 10
+
+    - role: platanus.hostname
+      hostname: "{{ ec2_tag_Name }}.{{ domain }}"
+      hostname_short: "{{ ec2_tag_Name }}"
+
+    - role: aws-cloudwatch-monitor
+
+    - role: nickhammond.logrotate
+      logrotate_scripts:
+        - name: apps
+          path: "/home/deploy/applications/**/shared/log/*.log"
+          options:
+            - su deploy deploy
+            - weekly
+            - size 25M
+            - missingok
+            - notifempty
+            - compress
+            - delaycompress
+            - copytruncate
+
+  handlers:
+    - name: Restart ssh
+      service: name=ssh state=restarted

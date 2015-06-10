@@ -1,0 +1,34 @@
+---
+- name: Install platanus base node server environment
+  hosts: tag_provision_platanus_negroku:&~tag_stack_.*node.*
+  remote_user: ubuntu
+  sudo: true
+
+  vars:
+    node_global: "0.10.36"
+
+  roles:
+    - role: nodenv
+      node_versions:
+        - "0.10.36"
+        - "0.12.0"
+      node_aliases:
+        "0.10": "0.10.36"
+        "0.12": "0.12.0"
+      node_global: "{{ node_global }}"
+      node_extra_user: "{{ deploy_user }}"
+      nodenv_plugins:
+        - name: "nodenv-vars"
+          repo: "git://github.com/OiNutter/nodenv-vars.git"
+          version: "38a807ac27debb81bad15f99893a95d1c7c7a0ae"
+
+    - role: nodenv_modules
+      modules:
+        - name: bower
+          node_versions:
+            - "0.10"
+            - "0.12"
+        - name: grunt-cli
+          node_versions:
+            - "0.10"
+            - "0.12"

@@ -1,0 +1,10 @@
+---
+eye_user: deploy
+eye_mail_address: ''
+eye_mail_user: ''
+eye_mail_password: ''
+eye_hipchat_room: ''
+eye_hipchat_token: ''
+eye_global_log: '/var/log/eye-global.log'
+eye_setting_location: "/home/{{ eye_user }}/eye.d"
+eye_ruby_version: "2.1"

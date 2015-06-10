@@ -1,0 +1,3 @@
+---
+nodenv_user: deploy
+nodenv_root: /usr/local/nodenv

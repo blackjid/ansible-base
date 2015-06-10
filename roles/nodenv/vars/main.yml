@@ -1,0 +1,6 @@
+---
+nodenv:
+  required_plugins:
+    - name: "node-build"
+      repo: "git://github.com/OiNutter/node-build.git"
+      version: "f18b3d67756d1cb25ba6e35044f816fd67211b33"

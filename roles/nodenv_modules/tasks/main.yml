@@ -1,0 +1,11 @@
+---
+- name: add install node modules
+  shell: nodenv exec npm install -g {{ item[0].name }}
+  environment:
+    NODENV_ROOT: "{{ nodenv_root }}"
+    NODENV_VERSION: "{{ item[1] }}"
+    PATH: "{{ nodenv_root }}/bin:{{ ansible_env.PATH }}"
+  with_subelements:
+    - modules
+    - node_versions
+  sudo: true

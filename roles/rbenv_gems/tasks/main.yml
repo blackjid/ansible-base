@@ -1,0 +1,11 @@
+---
+- name: add install gems
+  shell: rbenv exec gem install {{ item[0].name }}
+  environment:
+    RBENV_ROOT: "{{ rbenv_root }}"
+    RBENV_VERSION: "{{ item[1] }}"
+    PATH: "{{ rbenv_root }}/bin:{{ ansible_env.PATH }}"
+  with_subelements:
+    - gems
+    - ruby_versions
+  sudo: true
